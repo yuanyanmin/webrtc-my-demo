@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <audio id="remote_audio" controls></audio>
+
+  <button id="call_btn">呼叫</button>
+
+  <button id="answer_btn">接通</button>
+
+  <button id="hang_up">挂断</button>
+
+  <script>
+    window.onload = function() {
+      let removeAudio = document.getElementById('remote_audio')
+      let callBtn = document.getElementById('call_btn')
+      let answerBtn = document.getElementById('answer_btn')
+      let hangupBtn = document.getElementById('hang_up')
+      const target = location.search.slice(6)
+
+      const PeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+
+      if (!PeerConnection) {
+        alert('浏览器不支持WebRTC！')
+      }
+
+      const peer = new PeerConnection();
+
+      peer.ontrack = e => {
+        if (e && e.streams) {
+          console.log('------收到对方的音频流------');
+          removeAudio.srcObject = e.streams[0]
+        }
+      }
+
+      peer.onicecandidate = e => {
+        // if (e.candidate) {
+        //   console.log('------搜集并发送候选人------');
+        //   socket.send(JSON.stringify({
+        //     type: `${target}_ice`,
+        //     iceCandidate: e.candidate
+        //   }))
+        // } else {
+        //   console.log('------候选人手机完成------');
+        // }
+      }
+
+  		const socket = new WebSocket('wss://localhost:443');
+      socket.onopen = () => {
+        console.log('------信令通道创建成功！------')
+        // target === 'offer' && (button.style.display = 'block');
+      }
+      socket.onerror = (error) => {
+        console.log('------信令通道创建失败！------', error)
+      };
+      socket.onmessage = e => {
+        console.log('------接受消息------');
+			  const { type, sdp, iceCandidate } = JSON.parse(e.data)
+        console.log(1111, type);
+
+      }
+
+      // 开始播放远端音频
+      removeAudio.addEventListener('loadedmetadata', () => {
+        console.log('------开始播放音频------');
+        removeAudio.play()
+      })
+
+      // 呼叫
+      callBtn.addEventListener('click', async () => {
+        console.log('------开始拨打------');
+			  // target === 'offer' && (button.style.display = 'none');
+        let stream;
+        try {
+          console.log('------尝试调取麦克风------')
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: false,
+            audio: true
+          })
+          console.log('------尝试调取麦克风成功------')
+        
+        } catch {
+          console.log('------尝试调取麦克风失败------')
+        }
+
+        stream.getTracks().forEach(track => {
+          peer.addTrack(track, stream);
+        });
+
+        const offer = await peer.createOffer();
+        console.log('------发送发起方的sdp------');
+        socket.send(JSON.stringify(offer))
+
+        
+
+      })
+
+      // 接通
+      answerBtn.addEventListener('click', async () => {
+        console.log('------接通------');
+			  // target === 'offer' && (button.style.display = 'none');
+        let stream;
+        try {
+          console.log('------尝试调取麦克风------')
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: false,
+            audio: true
+          })
+          // removeAudio.srcObject = stream
+          console.log('------尝试调取麦克风成功------')
+          
+        } catch {
+          console.log('------尝试调取麦克风失败------')
+        }
+
+        stream.getTracks().forEach(track => {
+          peer.addTrack(track, stream);
+        });
+
+        const answer = await peer.createAnswer();
+        console.log('------发送接收方的sdp------');
+        socket.send(JSON.stringify(answer))
+      })
+
+      // 挂断
+      hangupBtn.addEventListener('click', async () => {
+        console.log('------结束通话------');
+			  // 销毁webrtc
+
+        // 结束音频
+
+      })
+
+      
+
+
+    }
+  </script>
+</body>
+</html>
