@@ -1,19 +1,22 @@
-const { log } = require('console');
+var path = require('path');
 const express = require('express')
 
 const app = express()
-
+app.use(express.static(path.join(__dirname, 'public')));
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const httpServer = http.createServer(app);
 const httpsServer = https.createServer({
-    key: fs.readFileSync('./src/cert/privatekey.pem', 'utf8'),
-    cert: fs.readFileSync('./src/cert/certificate.crt', 'utf8')
+    // key: fs.readFileSync('./src/cert/privatekey.pem', 'utf8'),
+    // cert: fs.readFileSync('./src/cert/certificate.crt', 'utf8')
+		key: fs.readFileSync('./src/cert/test/server.pem', 'utf8'),
+    cert: fs.readFileSync('./src/cert/test/server.crt', 'utf8')
 }, app);
 const PORT = 80;
 const SSLPORT = 443;
 
+app.use('/public', express.static('public'))
 httpServer.listen(PORT, function() {
 	console.log('HTTP Server is running on: http://localhost:%s', PORT);
 });
@@ -46,6 +49,17 @@ app.get('/tel', (req, res) => {
 	res.sendFile('./client/tel.html', { root: __dirname });
 });
 
+app.get('/video', (req, res) => {
+	res.sendFile('./client/video.html', { root: __dirname });
+});
+
+app.get('/audio', (req, res) => {
+	res.sendFile('./client/audio.html', { root: __dirname });
+});
+
+app.get('/jssip', (req, res) => {
+	res.sendFile('./jssip/index.html', { root: __dirname });
+});
 
 
 // app.listen(3000)
