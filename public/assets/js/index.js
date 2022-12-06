@@ -1,4 +1,4 @@
-const sip_address = "172.21.152.56", ws_port = "5066", sip_port = "5050";	//服务器地址 ， FreeSwitch //112.74.54.80
+// const sip_address = "172.21.152.56", ws_port = "5066", sip_port = "5050";	//服务器地址 ， FreeSwitch //112.74.54.80
 $(document).ready(function() {
   let uKeFuSoftPhone
 
@@ -45,11 +45,25 @@ $(document).ready(function() {
   // 登陆
   $('#login-btn').click(function() {
     $('#ukefu-login-html').hide()
-    const extno = $("#extno").val()
-    const extpass = $("#extpass").val()
-    const expwss = $("#expwss").val()
+    // const extno = $("#extno").val()
+    // const extpass = $("#extpass").val()
+    // const expwss = $("#expwss").val()
 
-    uKeFuSoftPhone.login(extno, extpass, expwss)
+    const sip_addr = $('#sip_addr').val()
+    const sip_port = $("#sip_port").val()
+    const ws_port = $("#ws_port").val()
+    const sip_no = $("#sip_no").val()
+    const sip_pass = $("#sip_pass").val()
+    const ws_type = $("#ws_type").val() || 'wss'
+
+    const ws_uri = `${ws_type}://${sip_addr}:${ws_port}`
+    const sip_uri = `sip:${sip_no}@${sip_addr}:${sip_port}`
+
+    console.info(`获取到的注册信息：sip_uri:${sip_uri};sip_password:${sip_pass};ws_url:${ws_uri}`);
+
+    $('#caller .number').text(sip_no);
+
+    uKeFuSoftPhone.login(sip_uri, ws_uri, sip_pass)
 
   })
 
@@ -126,11 +140,8 @@ $(document).ready(function() {
     input: function() {
       $('#ukefu-login-html').show()
     },
-    login: function(extno, extpass, expwss) {
-      const ws_uri = `${expwss}://${sip_address}:${ws_port}`
-      const sip_uri = `sip:${extno}@${sip_address}:${sip_port}`
-
-      console.info(`获取到的注册信息：sip_uri:${sip_uri};sip_password:${extpass};ws_url:${ws_uri}`);
+    login: function(sip_uri, ws_uri, sip_pass) {
+     
 
       const socket = new JsSIP.WebSocketInterface(ws_uri)
 
@@ -138,13 +149,11 @@ $(document).ready(function() {
         sockets: [socket],
         outbound_proxy_set: ws_uri,
         uri: sip_uri,  //与用户代理关联的SIP URI（字符串）。这是您的提供商提供给您的SIP地址
-        password: extpass,  //SIP身份验证密码
+        password: sip_pass,  //SIP身份验证密码
         register: true,  //指示启动时JsSIP用户代理是否应自动注册
         session_timers: false  //启用会话计时器（根据RFC 4028）
       }
       softPhoneUA = new JsSIP.UA(config)
-
-      $('#caller .number').text(extno);
 
       // 成功注册触发。
       softPhoneUA.on('registered', function(data) {
