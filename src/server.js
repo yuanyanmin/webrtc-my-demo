@@ -60,6 +60,9 @@ app.get('/audio', (req, res) => {
 app.get('/jssip', (req, res) => {
 	res.sendFile('./jssip/index.html', { root: __dirname });
 });
+app.get('/jssiptest', (req, res) => {
+	res.sendFile('./jssip/index copy 2.html', { root: __dirname });
+});
 
 
 // app.listen(3000)
